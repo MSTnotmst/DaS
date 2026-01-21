@@ -1,0 +1,14 @@
+tracking/00007_spiral_tracking.mp4
+tracking/00007_left_tracking.mp4
+tracking/00007_right_tracking.mp4
+tracking/00007_up_tracking.mp4
+tracking/00007_down_tracking.mp4
+tracking/00009_spiral_tracking.mp4
+tracking/00009_left_tracking.mp4
+tracking/00009_right_tracking.mp4
+tracking/00009_up_tracking.mp4
+tracking/00009_down_tracking.mp4
+tracking/00000_tracking.mp4
+tracking/00003_tracking.mp4
+tracking/00005_tracking.mp4
+tracking/00007_tracking.mp4
