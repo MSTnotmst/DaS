@@ -125,8 +125,9 @@ class DiffusionAsShaderPipeline:
 
         # 2. Set Scheduler.
         pipe.scheduler = CogVideoXDPMScheduler.from_config(pipe.scheduler.config, timestep_spacing="trailing")
-
-        pipe.to(self.device, dtype=dtype)
+        pipe.to(self.device, dtype=torch.bfloat16)
+        pipe.enable_model_cpu_offload()
+        # pipe.enable_attention_slicing("max")
         # pipe.enable_sequential_cpu_offload()
 
         pipe.vae.enable_slicing()
@@ -140,6 +141,8 @@ class DiffusionAsShaderPipeline:
         print("Encoding tracking maps")
         tracking_maps = tracking_maps.unsqueeze(0) # [B, T, C, H, W]
         tracking_maps = tracking_maps.permute(0, 2, 1, 3, 4)  # [B, C, T, H, W]
+        # tracking_maps = tracking_maps.float()
+        # pipe.vae.to(dtype=torch.float32)
         tracking_latent_dist = pipe.vae.encode(tracking_maps).latent_dist
         tracking_maps = tracking_latent_dist.sample() * pipe.vae.config.scaling_factor
         tracking_maps = tracking_maps.permute(0, 2, 1, 3, 4)  # [B, F, C, H, W]

@@ -280,3 +280,5 @@ if __name__ == "__main__":
         checkpoint_path=args.checkpoint_path,
         num_inference_steps=args.num_inference_steps
     )
+
+    torch.cuda.empty_cache()
