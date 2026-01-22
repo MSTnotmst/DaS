@@ -1,5 +1,6 @@
 import os
 import sys
+import gc
 import argparse
 from PIL import Image
 project_root = os.path.dirname(os.path.abspath(__file__))
@@ -9,7 +10,7 @@ try:
     os.environ["TOKENIZERS_PARALLELISM"] = "false"
 except:
     print("Warning: MoGe not found, motion transfer will not be applied")
-    
+
 import torch
 import numpy as np
 from PIL import Image
@@ -117,6 +118,7 @@ if __name__ == "__main__":
     parser.add_argument('--object_mask', type=str, default=None, help='Path to object mask image (binary image)')
     parser.add_argument('--tracking_method', type=str, default='spatracker', choices=['spatracker', 'moge', 'cotracker'], 
                     help='Tracking method to use (spatracker, cotracker or moge)')
+    parser.add_argument('--only_repaint', action='store_true', help = 'Only perform repainting and exit')
     args = parser.parse_args()
     
     # Load input video/image
@@ -198,15 +200,17 @@ if __name__ == "__main__":
             infer_result["mask"].cpu().numpy()
         )
         print('export tracking video via MoGe.')
+        if 'moge' in locals():
+            del moge
+        torch.cuda.empty_cache()
 
     else:
-
         if args.tracking_method == "cotracker":
             pred_tracks, pred_visibility = das.generate_tracking_cotracker(video_tensor) # T N 3, T N
         else:
             pred_tracks, pred_visibility, T_Firsts = das.generate_tracking_spatracker(video_tensor) # T N 3, T N, B N
 
-        # Preprocess video tensor to match VGGT requirements
+        # Preprocess video tensor to match 2R2R0;276;0c0+r436fVGGT requirements
         t, c, h, w = video_tensor.shape
         new_width = 518
         new_height = round(h * (new_width / w) / 14) * 14
@@ -234,6 +238,7 @@ if __name__ == "__main__":
         cam_motion.set_extr(extr)
 
         del vggt_model
+        torch.cuda.empty_cache()
 
         # Apply camera motion if specified
         if args.camera_motion:
@@ -270,7 +275,24 @@ if __name__ == "__main__":
             _, tracking_tensor = das.visualize_tracking_cotracker(pred_tracks, pred_visibility)
         else:
             _, tracking_tensor = das.visualize_tracking_spatracker(video_tensor, pred_tracks, pred_visibility, T_Firsts)
+
+
+    if 'repainter' in locals():
+        print("Detected Repainter, releasing memory...")
+        if hasattr(repainter, 'pipe'):
+            repainter.pipe.to('cpu') 
+        del repainter
+        
+    if 'moge' in locals():
+        del moge
+        
+    gc.collect() # 執行 Python 垃圾回收
+    torch.cuda.empty_cache() # 強制 GPU 釋放緩存
+    print("Memory cleared! Starting Video Generation...")
     
+    if args.only_repaint:
+        print(f"Repaint finished. Image saved in {args.output_dir}. Exiting as request.")
+        sys.exit(0)
     das.apply_tracking(
         video_tensor=video_tensor,
         fps=fps,

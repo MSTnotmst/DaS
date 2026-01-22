@@ -10,7 +10,7 @@ try:
     os.environ["TOKENIZERS_PARALLELISM"] = "false"
 except:
     print("Warning: MoGe not found, motion transfer will not be applied")
-    
+
 import torch
 import numpy as np
 from PIL import Image
@@ -125,10 +125,10 @@ class DiffusionAsShaderPipeline:
 
         # 2. Set Scheduler.
         pipe.scheduler = CogVideoXDPMScheduler.from_config(pipe.scheduler.config, timestep_spacing="trailing")
-        pipe.to(self.device, dtype=torch.bfloat16)
+        # pipe.to(self.device, dtype=torch.bfloat16)
         pipe.enable_model_cpu_offload()
         # pipe.enable_attention_slicing("max")
-        # pipe.enable_sequential_cpu_offload()
+        pipe.enable_sequential_cpu_offload()
 
         pipe.vae.enable_slicing()
         pipe.vae.enable_tiling()
