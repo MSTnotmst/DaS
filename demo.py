@@ -17,6 +17,7 @@ from PIL import Image
 import torchvision.transforms as transforms
 from moviepy.editor import VideoFileClip
 from diffusers.utils import load_image, load_video
+from torchvision import transforms
 
 from models.pipelines import DiffusionAsShaderPipeline, FirstFrameRepainter, CameraMotionGenerator, ObjectMotionGenerator
 from submodules.MoGe.moge.model.v1 import MoGeModel
@@ -119,6 +120,7 @@ if __name__ == "__main__":
     parser.add_argument('--tracking_method', type=str, default='spatracker', choices=['spatracker', 'moge', 'cotracker'], 
                     help='Tracking method to use (spatracker, cotracker or moge)')
     parser.add_argument('--only_repaint', action='store_true', help = 'Only perform repainting and exit')
+    parser.add_argument('--stage', type=str, choices=['repaint', 'tracking', 'render'], help='Execute specific stage only')
     args = parser.parse_args()
     
     # Load input video/image
@@ -143,8 +145,24 @@ if __name__ == "__main__":
                 prompt=args.prompt,
                 depth_path=args.depth_path
             )
+            if args.stage == 'repaint' or args.only_repaint:
+                print(">>> [Stage: Repaint] 任務完成，圖片已存檔。正在釋放顯存並退出...")
+                import sys
+                sys.exit(0)
         else:
-            repaint_img_tensor, _, _ = load_media(args.repaint)
+            if args.repaint.lower() != "true":
+                if not os.path.exists(args.repaint):
+                    raise FileNotFoundError(f"找不到重繪圖片：{args.repaint}，請檢查 Stage 1 是否成功。")
+    
+                # 繞過 load_media，直接用 PIL 讀取
+                print(f"正在從本地載入重繪圖片: {args.repaint}")
+                img_pil = Image.open(args.repaint).convert("RGB")
+    
+            # 轉換成 Tensor 格式 (通常 load_media 做的事)
+            transform = transforms.Compose([
+                transforms.ToTensor(),
+            ])
+            repaint_img_tensor = transform(img_pil).unsqueeze(0)
             repaint_img_tensor = repaint_img_tensor[0]  # Take first frame
 
     # Generate tracking if not provided
@@ -239,7 +257,7 @@ if __name__ == "__main__":
 
         del vggt_model
         torch.cuda.empty_cache()
-
+    
         # Apply camera motion if specified
         if args.camera_motion:
             poses = cam_motion.get_default_motion() # shape: [49, 4, 4]
@@ -275,7 +293,11 @@ if __name__ == "__main__":
             _, tracking_tensor = das.visualize_tracking_cotracker(pred_tracks, pred_visibility)
         else:
             _, tracking_tensor = das.visualize_tracking_spatracker(video_tensor, pred_tracks, pred_visibility, T_Firsts)
-
+    
+    if args.stage == 'tracking':
+        print(">>> Stage: Tracking finished. Exiting to clear VRAM.")
+        import sys
+        sys.exit(0)
 
     if 'repainter' in locals():
         print("Detected Repainter, releasing memory...")
