@@ -4,7 +4,7 @@
 export PYTORCH_ALLOC_CONF=expandable_segments:True
 
 # 1. 基本路徑與參數設定
-BASE_DIR="/mnt/cglab/uuuu/DaS"
+BASE_DIR="$(cd "$(dirname "$0")" && pwd)"
 FUNCTION_NAME="motionTransfer"
 # 在這裡輸入你的 Prompt
 RAW_PROMPT="A realistic sea lion with wet skin eating grass"

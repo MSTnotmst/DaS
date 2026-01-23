@@ -175,6 +175,7 @@ validation/
 ckpts/
 .vscode/
 output.mp4
+checkpoints/
 outputs/
 camctrl_output
 *.code-workspace
@@ -184,8 +185,6 @@ camctrl_output
 .DS_Store
 __pycache__
 vis_results
-checkpoints
-**/*/.pth
 **/*/.pt
 **/*/.mp4
 **/*/.npy
@@ -195,5 +194,4 @@ models/monoD/zoeDepth/ckpts/*
 slurm-*.out
 .vscode
 
-data/
-tmp/
+tmp/checkpoints/
