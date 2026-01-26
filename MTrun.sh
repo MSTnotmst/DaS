@@ -5,7 +5,7 @@ export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:$LD_LIBRARY_PATH"
 BASE_DIR="$(cd "$(dirname "$0")" && pwd)"
 FUNCTION_NAME="motionTransfer"
 # 在這裡輸入你的 Prompt
-RAW_PROMPT="A realistic sealion wearing a F1 Ferrari team hat with wet skin eating grass, photorealistic, high detail, 8k"
+RAW_PROMPT="A photorealistic koala wearing a McLaren Formula 1 team hat, ultra-high detail, 8K realism. The koala subtly reflects Oscar Piastri’s facial traits and presence: calm, focused expression, confident and composed eyes, youthful yet precise racing demeanor translated naturally into koala anatomy. Wet fur and skin with realistic moisture, water droplets and accurate subsurface scattering. The koala slowly eats fresh green grass with natural jaw and mouth movement. Cinematic soft daylight after rain, shallow depth of field, realistic shadows, motion-ready proportions, stable facial structure, no stylization."
 INPUT_VIDEO="$BASE_DIR/data/motion_transfer/videos/1.mp4"
 
 # 2. 自動生成「功能名 + Prompt + 時間」的資料夾名稱

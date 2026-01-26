@@ -28,7 +28,7 @@ from image_gen_aux import DepthPreprocessor
 from moviepy.editor import ImageSequenceClip
 
 class DiffusionAsShaderPipeline:
-    def __init__(self, gpu_id=0, output_dir='outputs'):
+    def __init__(self, gpu_id=0, output_dir='outputs', dtype=torch.bfloat16):
         """Initialize MotionTransfer class
         
         Args:
@@ -46,7 +46,7 @@ class DiffusionAsShaderPipeline:
         # device
         self.device = f"cuda:{gpu_id}"
         torch.cuda.set_device(gpu_id)
-        self.dtype = torch.bfloat16
+        self.dtype = dtype
 
         # files
         self.output_dir = output_dir
@@ -69,7 +69,7 @@ class DiffusionAsShaderPipeline:
         num_inference_steps: int = 25,
         guidance_scale: float = 6.0,
         num_videos_per_prompt: int = 1,
-        dtype: torch.dtype = torch.bfloat16,
+        dtype: torch.dtype | None = None,
         fps: int = 24,
         seed: int = 42,
     ):
@@ -91,12 +91,14 @@ class DiffusionAsShaderPipeline:
         from transformers import T5EncoderModel, T5Tokenizer
         from diffusers import AutoencoderKLCogVideoX, CogVideoXDDIMScheduler
         from models.cogvideox_tracking import CogVideoXTransformer3DModelTracking
-        
-        vae = AutoencoderKLCogVideoX.from_pretrained(model_path, subfolder="vae")
-        vae.to(dtype=torch.bfloat16)
-        text_encoder = T5EncoderModel.from_pretrained(model_path, subfolder="text_encoder")
+        if dtype is None:
+            dtype = self.dtype
+            
+        vae = AutoencoderKLCogVideoX.from_pretrained(model_path, subfolder="vae", torch_dtype=dtype)
+        vae.to(dtype=dtype)
+        text_encoder = T5EncoderModel.from_pretrained(model_path, subfolder="text_encoder", torch_dtype=dtype)
         tokenizer = T5Tokenizer.from_pretrained(model_path, subfolder="tokenizer")
-        transformer = CogVideoXTransformer3DModelTracking.from_pretrained(model_path, subfolder="transformer")
+        transformer = CogVideoXTransformer3DModelTracking.from_pretrained(model_path, subfolder="transformer", torch_dtype=dtype)
         scheduler = CogVideoXDDIMScheduler.from_pretrained(model_path, subfolder="scheduler")
         
         pipe = CogVideoXImageToVideoPipelineTracking(
@@ -116,10 +118,9 @@ class DiffusionAsShaderPipeline:
         pipe.text_encoder.eval()
         pipe.vae.eval()
 
-        self.dtype = dtype
 
         # Process tracking tensor
-        tracking_maps = tracking_tensor.float() # [T, C, H, W]
+        tracking_maps = tracking_tensor.float()  # [T, C, H, W]
         tracking_maps = tracking_maps.to(device=self.device, dtype=dtype)
         tracking_first_frame = tracking_maps[0:1]  # Get first frame as [1, C, H, W]
         height, width = tracking_first_frame.shape[2], tracking_first_frame.shape[3]
@@ -607,7 +608,7 @@ class DiffusionAsShaderPipeline:
             output_path=final_output,
             num_inference_steps=50,
             guidance_scale=6.0,
-            dtype=torch.bfloat16,
+            dtype=torch.dtype,
             fps=self.fps
         )
         print(f"Final video generated successfully at: {final_output}")
@@ -621,7 +622,7 @@ class DiffusionAsShaderPipeline:
         self.object_motion = motion_type
 
 class FirstFrameRepainter:
-    def __init__(self, gpu_id=0, output_dir='outputs'):
+    def __init__(self, gpu_id=0, output_dir='outputs', dtype=torch.bfloat16):
         """Initialize FirstFrameRepainter
         
         Args:
@@ -631,6 +632,7 @@ class FirstFrameRepainter:
         self.device = f"cuda:{gpu_id}"
         self.output_dir = output_dir
         self.max_depth = 65.0
+        self.dtype = dtype
         os.makedirs(output_dir, exist_ok=True)
         
     def repaint(self, image_tensor, prompt, depth_path=None, method="dav"):
@@ -649,7 +651,7 @@ class FirstFrameRepainter:
         # Load Flux model
         flux_pipe = FluxControlPipeline.from_pretrained(
             "black-forest-labs/FLUX.1-Depth-dev", 
-            torch_dtype=torch.bfloat16
+            torch_dtype=self.dtype
         )
         flux_pipe.enable_model_cpu_offload(gpu_id=0)
 

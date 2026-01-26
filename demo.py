@@ -109,6 +109,7 @@ if __name__ == "__main__":
     parser.add_argument('--depth_path', type=str, default=None, help='Path to depth image')
     parser.add_argument('--tracking_path', type=str, default=None, help='Path to tracking video, if provided, camera motion and object manipulation will not be applied')
     parser.add_argument('--num_inference_steps', type=int, default=50, help='Number of inference steps')
+    parser.add_argument('--dtype', type=str, default='bfloat16', choices=['bfloat16', 'float16', 'float32'], help='Computation dtype for inference and repainting')
     parser.add_argument('--repaint', type=str, default=None, 
                        help='Path to repainted image, or "true" to perform repainting, if not provided use original frame')
     parser.add_argument('--camera_motion', type=str, default=None, 
@@ -128,9 +129,14 @@ if __name__ == "__main__":
     if not is_video:
         args.tracking_method = "moge"
         print("Image input detected, using MoGe for tracking video generation.")
-
+    dtype_map = {
+        'bfloat16': torch.bfloat16,
+        'float16': torch.float16,
+        'float32': torch.float32,
+    }
+    dtype = dtype_map[args.dtype]
     # Initialize pipeline
-    das = DiffusionAsShaderPipeline(gpu_id=args.gpu, output_dir=args.output_dir)
+    das = DiffusionAsShaderPipeline(gpu_id=args.gpu, output_dir=args.output_dir, dtype=dtype)
     das.fps = fps
     if args.tracking_method == "moge" and args.tracking_path is None:
         moge = MoGeModel.from_pretrained("Ruicheng/moge-vitl").to(das.device)
@@ -139,7 +145,11 @@ if __name__ == "__main__":
     repaint_img_tensor = None
     if args.repaint:
         if args.repaint.lower() == "true":
-            repainter = FirstFrameRepainter(gpu_id=args.gpu, output_dir=args.output_dir)
+            repainter = FirstFrameRepainter(
+                gpu_id=args.gpu,
+                output_dir=args.output_dir,
+                dtype=das.dtype,
+            )
             repaint_img_tensor = repainter.repaint(
                 video_tensor[0], 
                 prompt=args.prompt,
