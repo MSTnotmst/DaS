@@ -19,10 +19,10 @@ OUT_DIR="$BASE_DIR/outputs/$RUN_NAME"
 
 # 建立專屬資料夾
 mkdir -p "$OUT_DIR"
-echo ">>> 本次實驗結果將儲存於: $OUT_DIR"
+echo ">>> 實驗結果存於: $OUT_DIR"
 
 # 3. 定義中間產物路徑 (確保三段流程讀取的路徑一致)
-REPAINT_FILE="$OUT_DIR/repaint_0.jpg"
+REPAINT_FILE="$OUT_DIR/temp_repainted.png"
 TRACKING_FILE="$OUT_DIR/tracking_video.mp4"
 
 # --- STAGE 1: REPAINT ---
@@ -36,7 +36,6 @@ python demo.py \
 
 # --- STAGE 2: TRACKING ---
 echo "===== [2/3] STAGE: TRACKING ====="
-# 注意：這裡 --repaint 傳入的是 Stage 1 生成的絕對路徑
 python demo.py \
     --stage tracking \
     --repaint "$REPAINT_FILE" \
@@ -46,7 +45,6 @@ python demo.py \
 
 # --- STAGE 3: RENDER ---
 echo "===== [3/3] STAGE: RENDER ====="
-# 注意：這裡 --repaint 和 --tracking_path 都傳入絕對路徑
 python demo.py \
     --stage render \
     --repaint "$REPAINT_FILE" \
@@ -56,4 +54,4 @@ python demo.py \
     --prompt "$RAW_PROMPT" \
     --num_inference_steps 20
 
-echo "===== 任務完成！結果請查看: $OUT_DIR ====="
+echo "===== 任務完成！請查看: $OUT_DIR ====="

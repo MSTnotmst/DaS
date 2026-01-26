@@ -153,12 +153,10 @@ if __name__ == "__main__":
             if args.repaint.lower() != "true":
                 if not os.path.exists(args.repaint):
                     raise FileNotFoundError(f"找不到重繪圖片：{args.repaint}，請檢查 Stage 1 是否成功。")
-    
-                # 繞過 load_media，直接用 PIL 讀取
                 print(f"正在從本地載入重繪圖片: {args.repaint}")
                 img_pil = Image.open(args.repaint).convert("RGB")
     
-            # 轉換成 Tensor 格式 (通常 load_media 做的事)
+        # 轉換成 Tensor 格式 (通常 load_media 做的事)
             transform = transforms.Compose([
                 transforms.ToTensor(),
             ])
