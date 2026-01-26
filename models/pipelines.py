@@ -93,6 +93,7 @@ class DiffusionAsShaderPipeline:
         from models.cogvideox_tracking import CogVideoXTransformer3DModelTracking
         
         vae = AutoencoderKLCogVideoX.from_pretrained(model_path, subfolder="vae")
+        vae.to(dtype=torch.bfloat16)
         text_encoder = T5EncoderModel.from_pretrained(model_path, subfolder="text_encoder")
         tokenizer = T5Tokenizer.from_pretrained(model_path, subfolder="tokenizer")
         transformer = CogVideoXTransformer3DModelTracking.from_pretrained(model_path, subfolder="transformer")
@@ -649,7 +650,8 @@ class FirstFrameRepainter:
         flux_pipe = FluxControlPipeline.from_pretrained(
             "black-forest-labs/FLUX.1-Depth-dev", 
             torch_dtype=torch.bfloat16
-        ).to(self.device)
+        )
+        flux_pipe.enable_model_cpu_offload(gpu_id=0)
 
         # Get depth map
         if depth_path is None:

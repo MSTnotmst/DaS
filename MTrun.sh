@@ -1,20 +1,17 @@
-# -*- coding: utf-8 -*-
-# +
 #!/bin/zsh
 export PYTORCH_ALLOC_CONF=expandable_segments:True
-
+export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:$LD_LIBRARY_PATH"
 # 1. 基本路徑與參數設定
 BASE_DIR="$(cd "$(dirname "$0")" && pwd)"
 FUNCTION_NAME="motionTransfer"
 # 在這裡輸入你的 Prompt
-RAW_PROMPT="A realistic sea lion with wet skin eating grass"
+RAW_PROMPT="A realistic sealion wearing a F1 Ferrari team hat with wet skin eating grass, photorealistic, high detail, 8k"
 INPUT_VIDEO="$BASE_DIR/data/motion_transfer/videos/1.mp4"
 
 # 2. 自動生成「功能名 + Prompt + 時間」的資料夾名稱
-# 將 Prompt 中的空格換成底線，並過濾掉特殊字元，避免路徑出錯
 SAFE_PROMPT=$(echo $RAW_PROMPT | tr ' ' '_' | tr -cd '[:alnum:]_')
 TIMESTAMP=$(date +"%m%d_%H%M")
-RUN_NAME="${FUNCTION_NAME}_${SAFE_PROMPT:0:50}_${TIMESTAMP}" # 限制長度防止檔名太長
+RUN_NAME="${FUNCTION_NAME}_${SAFE_PROMPT:0:20}_${TIMESTAMP}"
 OUT_DIR="$BASE_DIR/outputs/$RUN_NAME"
 
 # 建立專屬資料夾
